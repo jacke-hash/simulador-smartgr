@@ -155,13 +155,27 @@ function showToast(msg,tipo='ok',duracao=4000){
 
 async function getSorterToken(){
   const creds=btoa(`${SORTER_USER}:${SORTER_PASS}`);
+
+  console.log('BASE64:', creds);
+
   const res=await fetch(`${SORTER_AUTH_BASE}/seguranca/gettoken`,{
     method:'GET',
-    headers:{'Authorization':`Basic ${creds}`,'Content-Type':'application/json'}
+    headers:{
+      'Authorization':`Basic ${creds}`
+    }
   });
-  if(!res.ok) throw new Error(`Auth Sorter falhou: ${res.status}`);
-  const data=await res.json();
-  return data.token;
+
+  console.log('STATUS TOKEN:', res.status);
+
+  const txt = await res.text();
+
+  console.log('BODY TOKEN:', txt);
+
+  if(!res.ok){
+    throw new Error(`Auth Sorter falhou: ${res.status}`);
+  }
+
+  return JSON.parse(txt).token;
 }
 
 async function enviarSorter(prod){
