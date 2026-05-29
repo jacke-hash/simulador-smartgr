@@ -78,25 +78,23 @@ select.inp{appearance:none;cursor:pointer}
 <body>
 <div id="app"></div>
 <script>
-const TC=0.0189;
-const WH="https://script.google.com/macros/s/AKfycbx1oB66fNf31nh79qmLDdhJU7WLhTmW5ZcdrFsBiFCzxbEC32pEGhrXysh7vXG_SAc5Ww/exec";
-const SORTER_AUTH="https://api-seguranca.sortercurve.com.br";
-const SORTER_API="https://api.sortercurve.com.br/sortercurve";
-const SORTER_USER="API.GRMED";
-const SORTER_PASS="sgr@1234";
+const TC  = 0.0189;
+const WH  = "https://script.google.com/macros/s/AKfycbx1oB66fNf31nh79qmLDdhJU7WLhTmW5ZcdrFsBiFCzxbEC32pEGhrXysh7vXG_SAc5Ww/exec";
+const PRODS = ["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
+const PZS = [3,6,9,12,15,18,21,24];
+const CRS = [30,60,90];
 
-const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
-const PZS=[3,6,9,12,15,18,21,24];
-const CRS=[30,60,90];
+let S = {
+  scr:1, tipoDoc:'CPF', doc:'', tel:'', nasc:'', cep:'', numero:'', vend:'',
+  prods:[], sims:{}, prazo:21, car:30, vmp:3000, err:{}, busy:false, toast:null
+};
 
-let S={scr:1,tipoDoc:'CPF',doc:'',tel:'',nasc:'',cep:'',numero:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,toast:null};
-
-const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const fFmt=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+const fBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fFmt = v => v>0 ? v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
 
 function parsePT(v){
-  const c=v.replace(/[^\d,.]/g,'');if(!c)return 0;
-  return c.includes(',')?parseFloat(c.replace(/\./g,'').replace(',','.'))||0:parseFloat(c.replace(/\./g,''))||0;
+  const c=v.replace(/[^\d,.]/g,''); if(!c) return 0;
+  return c.includes(',') ? parseFloat(c.replace(/\./g,'').replace(',','.'))||0 : parseFloat(c.replace(/\./g,''))||0;
 }
 function mDoc(v,tipo){
   const d=v.replace(/\D/g,'');
@@ -116,188 +114,84 @@ function calc(prod){
 }
 
 function updProd(prod,i){
-  const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+  const s=S.sims[prod]||{vc:0,en:0}; const c=calc(prod);
   const pct=s.vc>0&&s.en>0?`${(s.en/s.vc*100).toFixed(1)}% do total`:'';
   const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
-  setT('rp'+i,fBRL(c.p));setT('rvp'+i,fBRL(c.vp));setT('rtot'+i,fBRL(c.tot));
-  setT('rvc'+i,fBRL(s.vc));setT('rnp'+i,c.np);
+  setT('rp'+i,fBRL(c.p)); setT('rvp'+i,fBRL(c.vp)); setT('rtot'+i,fBRL(c.tot));
+  setT('rvc'+i,fBRL(s.vc)); setT('rnp'+i,c.np);
   const pe=document.getElementById('ipct'+i);
-  if(pe){pe.textContent=pct;pe.style.display=pct?'block':'none';}
+  if(pe){pe.textContent=pct; pe.style.display=pct?'block':'none';}
 }
 
 function togP(name){
   const i=S.prods.indexOf(name);
-  if(i>=0)S.prods.splice(i,1);
-  else if(S.prods.length<2){S.prods.push(name);if(!S.sims[name])S.sims[name]={vc:0,en:0};}
+  if(i>=0) S.prods.splice(i,1);
+  else if(S.prods.length<2){S.prods.push(name); if(!S.sims[name])S.sims[name]={vc:0,en:0};}
   render();
 }
 
 function val1(){
   const e={};
   const docLimpo=S.doc.replace(/\D/g,'');
-  if(S.tipoDoc==='CPF'&&docLimpo.length<11)e.doc='CPF inválido';
-  if(S.tipoDoc==='CNPJ'&&docLimpo.length<14)e.doc='CNPJ inválido';
-  if(S.tel.replace(/\D/g,'').length<10)e.tel='Telefone inválido';
-  if(!S.nasc)e.nasc='Obrigatório';
-  if(S.cep.replace(/\D/g,'').length<8)e.cep='CEP inválido';
-  if(!S.numero.trim())e.numero='Obrigatório';
-  if(!S.vend.trim())e.vend='Obrigatório';
-  if(!S.prods.length)e.prods='Selecione ao menos 1 produto';
-  S.err=e;return!Object.keys(e).length;
+  if(S.tipoDoc==='CPF'&&docLimpo.length<11) e.doc='CPF inválido';
+  if(S.tipoDoc==='CNPJ'&&docLimpo.length<14) e.doc='CNPJ inválido';
+  if(S.tel.replace(/\D/g,'').length<10) e.tel='Telefone inválido';
+  if(!S.nasc) e.nasc='Obrigatório';
+  if(S.cep.replace(/\D/g,'').length<8) e.cep='CEP inválido';
+  if(!S.numero.trim()) e.numero='Obrigatório';
+  if(!S.vend.trim()) e.vend='Obrigatório';
+  if(!S.prods.length) e.prods='Selecione ao menos 1 produto';
+  S.err=e; return !Object.keys(e).length;
 }
 
 function showToast(msg,tipo='ok',duracao=4000){
-  S.toast={msg,tipo};render();
-  setTimeout(()=>{S.toast=null;render();},duracao);
+  S.toast={msg,tipo}; render();
+  setTimeout(()=>{S.toast=null; render();}, duracao);
 }
 
-// ─── SORTER: Token (válido 24h — idealmente cachear) ───────────────────────
-async function getSorterToken(){
-  const basic=btoa(`${SORTER_USER}:${SORTER_PASS}`);
-  const r=await fetch(`${SORTER_AUTH}/seguranca/gettoken`,{
-    method:'GET',
-    headers:{Authorization:`Basic ${basic}`}
-  });
-  if(!r.ok) throw new Error(`GetToken HTTP ${r.status}`);
-  const data=await r.json();
-  if(data.tipoRetorno!==0) throw new Error(`GetToken erro tipoRetorno=${data.tipoRetorno}`);
-  return data.token;
-}
-
-// ─── SORTER: Busca regra padrão pelo tipo (CPF ou CNPJ) ────────────────────
-async function getRegraId(token, tipo){
-  const r=await fetch(`${SORTER_API}/v1/regras`,{
-    method:'GET',
-    headers:{Authorization:`Bearer ${token}`}
-  });
-  if(!r.ok) throw new Error(`Regras HTTP ${r.status}`);
-  const regras=await r.json();
-  // Prioridade: padrão do tipo → qualquer ativa do tipo
-  const padrao=regras.find(x=>x.tipo===tipo&&x.padrao===true&&x.ativo===true);
-  const qualquer=regras.find(x=>x.tipo===tipo&&x.ativo===true);
-  const regra=padrao||qualquer;
-  if(!regra) throw new Error(`Nenhuma regra ativa encontrada para ${tipo}`);
-  return regra.regraId;
-}
-
-// ─── SORTER: Cria análise e aguarda resultado ───────────────────────────────
-async function enviarSorter(prod){
-  const token=await getSorterToken();
-  const regraId=await getRegraId(token, S.tipoDoc);
-
-  const docLimpo=S.doc.replace(/\D/g,'');
-  const telLimpo=S.tel.replace(/\D/g,'');
-  const cepLimpo=S.cep.replace(/\D/g,'');
-  const valorVenda=S.sims[prod]?S.sims[prod].vc:0;
-
-  const body={
-    regraId: regraId,
-    tipo: S.tipoDoc,
-    documentoFormatado: S.doc,   // com máscara — manual aceita com ou sem
-    valorVenda: valorVenda,
-    rendaPresumida: 0,
-    prazoEmDias: S.prazo,
-    telefone: telLimpo,
-    cep: cepLimpo,
-    numero: S.numero
-  };
-
-  const r=await fetch(`${SORTER_API}/v1/analise`,{
-    method:'POST',
-    headers:{
-      Authorization:`Bearer ${token}`,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify(body)
-  });
-
-  const txt=await r.text();
-  if(!r.ok) throw new Error(`Sorter POST erro ${r.status}: ${txt}`);
-
-  let analiseId;
-  try{ analiseId=JSON.parse(txt).analiseDocumentoId; }
-  catch(e){ throw new Error(`Resposta inesperada do Sorter: ${txt}`); }
-
-  if(!analiseId) throw new Error('analiseDocumentoId não retornado');
-
-  // Salva o ID na planilha para referência futura
-  salvarResultadoPlanilha(prod, analiseId, token);
-
-  return analiseId;
-}
-
-// ─── SORTER: Salva resultado na planilha (assíncrono, não bloqueia UI) ──────
-async function salvarResultadoPlanilha(prod, analiseId, token){
-  // Aguarda processamento do Sorter (até 10s, polling a cada 2s)
-  let resultado=null;
-  for(let i=0;i<5;i++){
-    await new Promise(r=>setTimeout(r,2000));
-    try{
-      const r=await fetch(`${SORTER_API}/v1/analise/${analiseId}`,{
-        method:'GET',
-        headers:{Authorization:`Bearer ${token}`}
-      });
-      if(r.ok){
-        resultado=await r.json();
-        if(resultado.decisao!==null && resultado.decisao!==undefined) break;
-      }
-    }catch(e){console.warn('Polling Sorter:',e);}
-  }
-
-  if(!resultado) return;
-
-  const decisaoMap={1:'Não Recomendado',2:'Recomendado',3:'Em Análise',4:'Análise Não Concluída',5:'Não Rec. Manual',6:'Rec. Manual',7:'Reanálise',8:'Em Análise Jurídica'};
-  const row={
-    cpf:S.doc, produto:prod,
-    sorterAnaliseId:analiseId,
-    sorterDecisao:decisaoMap[resultado.decisao]||resultado.decisao,
-    sorterNome:resultado.nome||'',
-    sorterScore:resultado.dadosAnalise?.score||resultado.dadosAnalise?.comportamental?.score||'',
-    data:new Date().toLocaleDateString('pt-BR'),
-    hora:new Date().toLocaleTimeString('pt-BR'),
-    tipo:'RESULTADO_SORTER'
-  };
-  const img=new Image();
-  img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
-}
-
-// ─── SALVAR TUDO ────────────────────────────────────────────────────────────
+// ─── SAVE: envia tudo para o Apps Script ─────────────────────────────────────
 async function save(){
-  S.busy=true;render();
+  S.busy=true; render();
 
-  // 1. Salvar na planilha
   for(const prod of S.prods){
-    const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+    const s=S.sims[prod]||{vc:0,en:0}; const c=calc(prod);
     const row={
-      tipoDoc:S.tipoDoc,cpf:S.doc,telefone:S.tel,dataNasc:S.nasc,
-      cep:S.cep,numero:S.numero,vendedor:S.vend,produto:prod,
-      valorCompra:s.vc.toFixed(2),entrada:s.en.toFixed(2),valorParcelado:c.vp.toFixed(2),
-      tc:'1,89%',prazo:S.prazo,carencia:S.car,parcela:c.p.toFixed(2),totalPago:c.tot.toFixed(2),
-      totalComEntrada:s.vc.toFixed(2),vmp:S.vmp.toFixed(2),numPacientes:c.np,
-      data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR')
+      tipoDoc: S.tipoDoc,
+      cpf: S.doc,
+      telefone: S.tel,
+      dataNasc: S.nasc,
+      cep: S.cep,
+      numero: S.numero,
+      vendedor: S.vend,
+      produto: prod,
+      valorCompra: s.vc.toFixed(2),
+      entrada: s.en.toFixed(2),
+      valorParcelado: c.vp.toFixed(2),
+      tc: '1,89%',
+      prazo: S.prazo,
+      carencia: S.car,
+      parcela: c.p.toFixed(2),
+      totalPago: c.tot.toFixed(2),
+      totalComEntrada: s.vc.toFixed(2),
+      vmp: S.vmp.toFixed(2),
+      numPacientes: c.np,
+      data: new Date().toLocaleDateString('pt-BR'),
+      hora: new Date().toLocaleTimeString('pt-BR')
     };
-    try{const img=new Image();img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;}
-    catch(e){console.error('Erro planilha:',e);}
+    try{
+      const img=new Image();
+      img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
+    }catch(e){ console.error('Erro ao enviar:', e); }
   }
 
   await new Promise(r=>setTimeout(r,1200));
-
-  // 2. Enviar ao Sorter
-  try{
-    for(const prod of S.prods){
-      await enviarSorter(prod);
-    }
-    S.busy=false;
-    showToast(`✓ Salvo · Análise Sorter enviada! Resultado em instantes.`,'ok');
-  }catch(e){
-    console.error('Erro Sorter:',e);
-    S.busy=false;
-    showToast(`✓ Planilha salva · Sorter: ${e.message}`,'er',7000);
-  }
+  S.busy=false;
+  showToast(`✓ Salvo · Análise Sorter enviada! Resultado em instantes.`,'ok');
 }
 
+// ─── HTML: Produto ────────────────────────────────────────────────────────────
 function psHTML(prod,i){
-  const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+  const s=S.sims[prod]||{vc:0,en:0}; const c=calc(prod);
   const pct=s.vc>0&&s.en>0?`${(s.en/s.vc*100).toFixed(1)}% do total`:'';
   return`<div class="psim">
     <div class="psnm">${prod}</div>
@@ -325,6 +219,7 @@ function psHTML(prod,i){
   </div>`;
 }
 
+// ─── HTML: Step 2 ─────────────────────────────────────────────────────────────
 function s2HTML(){
   const nascFmt=S.nasc?new Date(S.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
   return`<div class="cih">
@@ -358,6 +253,7 @@ function s2HTML(){
   </div>`;
 }
 
+// ─── HTML: Step 1 ─────────────────────────────────────────────────────────────
 function s1HTML(){
   const isCPF=S.tipoDoc==='CPF';
   return`<div class="card">
@@ -423,6 +319,7 @@ function s1HTML(){
   <button class="btn" id="bnxt">Continuar para Simulação →</button>`;
 }
 
+// ─── BIND ─────────────────────────────────────────────────────────────────────
 function bind2(){
   document.getElementById('iprazo').onchange=e=>{S.prazo=parseInt(e.target.value);render()};
   document.getElementById('icar').onchange=e=>{S.car=parseInt(e.target.value);render()};
@@ -432,9 +329,9 @@ function bind2(){
     S.prods.forEach((p,i)=>updProd(p,i));
   };
   S.prods.forEach((prod,i)=>{
-    const vc=document.getElementById('ivc'+i),en=document.getElementById('ien'+i);
-    if(vc)vc.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].vc=parsePT(e.target.value);updProd(prod,i)};
-    if(en)en.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].en=parsePT(e.target.value);updProd(prod,i)};
+    const vc=document.getElementById('ivc'+i), en=document.getElementById('ien'+i);
+    if(vc) vc.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].vc=parsePT(e.target.value);updProd(prod,i)};
+    if(en) en.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].en=parsePT(e.target.value);updProd(prod,i)};
   });
   document.getElementById('bbk').onclick=()=>{S.scr=1;render()};
   document.getElementById('bsv').onclick=save;
@@ -452,6 +349,7 @@ function bind1(){
   document.querySelectorAll('.pc[data-tp]').forEach(el=>el.onclick=()=>togP(el.dataset.tp));
 }
 
+// ─── RENDER ───────────────────────────────────────────────────────────────────
 function render(){
   const app=document.getElementById('app');
   const is1=S.scr===1;
@@ -466,7 +364,7 @@ function render(){
   </div>
   <div class="wrap">${is1?s1HTML():s2HTML()}</div>
   ${S.toast?`<div class="toast ${S.toast.tipo}">${S.toast.msg}</div>`:''}`;
-  if(is1)bind1();else bind2();
+  if(is1) bind1(); else bind2();
 }
 render();
 </script>
