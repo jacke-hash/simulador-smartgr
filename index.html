@@ -177,7 +177,10 @@ async function getSorterToken(){
 }
 
 async function enviarSorter(prod){
-  const token = await getSorterToken();
+const token = await getSorterToken();
+const regras = await getRegras(token);
+console.log('REGRAS JSON:', regras);
+throw new Error('Parar teste');
 
   const docLimpo = S.doc.replace(/\D/g,'');
   const telLimpo = S.tel.replace(/\D/g,'');
@@ -224,6 +227,20 @@ async function enviarSorter(prod){
   }
 
   return retorno;
+}
+
+  async function getRegras(token) {
+  const res = await fetch(
+    'https://api.sortercurve.com.br/SorterCurve/v1/regras',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  return await res.json();
 }
 
 async function save(){
