@@ -8,7 +8,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#010812;font-family:'Segoe UI',system-ui,sans-serif;color:#e8f2ff;min-height:100vh}
 .hdr{background:#020d20;border-bottom:1px solid #1a3a6a;padding:12px 28px;display:flex;align-items:center;justify-content:space-between}
-.hdr img{height:38px;width:auto}
 .hdr-sub{font-size:10px;color:#7ab3e8;letter-spacing:1.5px;text-transform:uppercase}
 .stps{display:flex;border-bottom:1px solid #1a3a6a}
 .stp{flex:1;padding:10px;text-align:center;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#7ab3e8;border-bottom:2px solid transparent;transition:.2s}
@@ -26,6 +25,9 @@ body{background:#010812;font-family:'Segoe UI',system-ui,sans-serif;color:#e8f2f
 select.inp{appearance:none;cursor:pointer}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.doc-row{display:grid;grid-template-columns:110px 1fr;gap:8px}
+.doc-select{background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 10px;font-size:14px;color:#e8f2ff;outline:none;transition:.18s;font-family:inherit;appearance:none;cursor:pointer;font-weight:600;color:#60a5fa}
+.doc-select:focus{border-color:#3b82f6;background:#010810}
 .btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:.18s;letter-spacing:.3px}
 .btn:hover{background:#2563eb}
 .btn:disabled{background:#0a1830;color:#4a7ab8;cursor:not-allowed}
@@ -68,7 +70,7 @@ select.inp{appearance:none;cursor:pointer}
 .toast.ok{background:#16a34a;border-color:#22c55e}
 .toast.er{background:#991b1b;border-color:#f87171}
 @keyframes su{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@media(max-width:480px){.r2,.r3{grid-template-columns:1fr}.hdr img{height:30px}.pbv{font-size:30px}}
+@media(max-width:480px){.r2,.r3,.doc-row{grid-template-columns:1fr}.doc-row{grid-template-columns:100px 1fr}.hdr img{height:30px}.pbv{font-size:30px}}
 </style>
 </head>
 <body>
@@ -83,7 +85,7 @@ const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEE
 const PZS=[3,6,9,12,15,18,21,24];
 const CRS=[30,60,90];
 
-let S={scr:1,cpf:'',tel:'',nasc:'',cep:'',numero:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,toast:null};
+let S={scr:1,tipoDoc:'CPF',doc:'',tel:'',nasc:'',cep:'',numero:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,toast:null};
 
 const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fFmt=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
@@ -92,7 +94,17 @@ function parsePT(v){
   const c=v.replace(/[^\d,.]/g,'');if(!c)return 0;
   return c.includes(',')?parseFloat(c.replace(/\./g,'').replace(',','.'))||0:parseFloat(c.replace(/\./g,''))||0;
 }
-function mCPF(v){const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
+
+function mDoc(v, tipo){
+  const d=v.replace(/\D/g,'');
+  if(tipo==='CPF'){
+    const s=d.slice(0,11);
+    return s.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  } else {
+    const s=d.slice(0,14);
+    return s.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  }
+}
 function mTel(v){const d=v.replace(/\D/g,'').slice(0,11);if(!d)return'';if(d.length<=2)return`(${d}`;if(d.length<=7)return`(${d.slice(0,2)}) ${d.slice(2)}`;return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`}
 function mCEP(v){const d=v.replace(/\D/g,'').slice(0,8);return d.length>5?`${d.slice(0,5)}-${d.slice(5)}`:d}
 
@@ -124,7 +136,9 @@ function togP(name){
 
 function val1(){
   const e={};
-  if(S.cpf.replace(/\D/g,'').length<11)e.cpf='CPF inválido';
+  const docLimpo=S.doc.replace(/\D/g,'');
+  if(S.tipoDoc==='CPF' && docLimpo.length<11) e.doc='CPF inválido';
+  if(S.tipoDoc==='CNPJ' && docLimpo.length<14) e.doc='CNPJ inválido';
   if(S.tel.replace(/\D/g,'').length<10)e.tel='Telefone inválido';
   if(!S.nasc)e.nasc='Obrigatório';
   if(S.cep.replace(/\D/g,'').length<8)e.cep='CEP inválido';
@@ -134,7 +148,7 @@ function val1(){
   S.err=e;return!Object.keys(e).length;
 }
 
-function showToast(msg, tipo='ok', duracao=4000){
+function showToast(msg,tipo='ok',duracao=4000){
   S.toast={msg,tipo};render();
   setTimeout(()=>{S.toast=null;render();},duracao);
 }
@@ -152,10 +166,9 @@ async function getSorterToken(){
 
 async function enviarSorter(prod){
   const token=await getSorterToken();
-  const cpfLimpo=S.cpf.replace(/\D/g,'');
+  const docLimpo=S.doc.replace(/\D/g,'');
   const telLimpo=S.tel.replace(/\D/g,'');
   const cepLimpo=S.cep.replace(/\D/g,'');
-  const c=calc(prod);
   const body={
     rendaPresumida:0,
     telefone:telLimpo,
@@ -163,9 +176,9 @@ async function enviarSorter(prod){
     numeroParcelas:S.prazo,
     cep:cepLimpo,
     numero:S.numero,
-    tipo:'CPF',
-    documento:cpfLimpo,
-    documentoFormatado:S.cpf,
+    tipo:S.tipoDoc,
+    documento:docLimpo,
+    documentoFormatado:S.doc,
     regrasId:null,
     vendedorId:null,
     vendedor:S.vend,
@@ -190,12 +203,13 @@ async function enviarSorter(prod){
 
 async function save(){
   S.busy=true;render();
-  
+
   // 1. Salvar na planilha
   for(const prod of S.prods){
     const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
     const row={
-      cpf:S.cpf,telefone:S.tel,dataNasc:S.nasc,cep:S.cep,numero:S.numero,vendedor:S.vend,produto:prod,
+      tipoDoc:S.tipoDoc,cpf:S.doc,telefone:S.tel,dataNasc:S.nasc,
+      cep:S.cep,numero:S.numero,vendedor:S.vend,produto:prod,
       valorCompra:s.vc.toFixed(2),entrada:s.en.toFixed(2),valorParcelado:c.vp.toFixed(2),
       tc:'1,89%',prazo:S.prazo,carencia:S.car,parcela:c.p.toFixed(2),totalPago:c.tot.toFixed(2),
       totalComEntrada:s.vc.toFixed(2),vmp:S.vmp.toFixed(2),numPacientes:c.np,
@@ -209,7 +223,7 @@ async function save(){
 
   await new Promise(r=>setTimeout(r,1200));
 
-  // 2. Enviar para o Sorter (usa primeiro produto como referência)
+  // 2. Enviar para o Sorter
   try{
     for(const prod of S.prods){
       await enviarSorter(prod);
@@ -255,7 +269,7 @@ function psHTML(prod,i){
 function s2HTML(){
   const nascFmt=S.nasc?new Date(S.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
   return`<div class="cih">
-    <div class="cii"><span>CPF</span><strong>${S.cpf}</strong></div>
+    <div class="cii"><span>${S.tipoDoc}</span><strong>${S.doc}</strong></div>
     <div class="cii"><span>Telefone</span><strong>${S.tel}</strong></div>
     <div class="cii"><span>CEP</span><strong>${S.cep}</strong></div>
     <div class="cii"><span>Número</span><strong>${S.numero}</strong></div>
@@ -286,11 +300,23 @@ function s2HTML(){
 }
 
 function s1HTML(){
+  const isCPF=S.tipoDoc==='CPF';
   return`<div class="card">
     <div class="ct">Dados do Cliente</div>
-    <div class="fld"><label class="lbl">CPF</label>
-      <input class="inp" id="icpf" placeholder="000.000.000-00" value="${S.cpf}" maxlength="14">
-      ${S.err.cpf?`<div class="err">${S.err.cpf}</div>`:''}
+    <div class="fld">
+      <label class="lbl">${S.tipoDoc}</label>
+      <div class="doc-row">
+        <select class="doc-select" id="itipoDoc">
+          <option value="CPF"${isCPF?' selected':''}>CPF</option>
+          <option value="CNPJ"${!isCPF?' selected':''}>CNPJ</option>
+        </select>
+        <input class="inp" id="idoc" 
+          placeholder="${isCPF?'000.000.000-00':'00.000.000/0000-00'}" 
+          value="${S.doc}" 
+          maxlength="${isCPF?14:18}"
+          inputmode="numeric">
+      </div>
+      ${S.err.doc?`<div class="err">${S.err.doc}</div>`:''}
     </div>
     <div class="r2">
       <div class="fld"><label class="lbl">Telefone</label>
@@ -354,7 +380,16 @@ function bind2(){
 }
 
 function bind1(){
-  document.getElementById('icpf').oninput=e=>{S.cpf=mCPF(e.target.value);e.target.value=S.cpf};
+  document.getElementById('itipoDoc').onchange=e=>{
+    S.tipoDoc=e.target.value;
+    S.doc='';
+    S.err.doc='';
+    render();
+  };
+  document.getElementById('idoc').oninput=e=>{
+    S.doc=mDoc(e.target.value,S.tipoDoc);
+    e.target.value=S.doc;
+  };
   document.getElementById('itel').oninput=e=>{S.tel=mTel(e.target.value);e.target.value=S.tel};
   document.getElementById('icep').oninput=e=>{S.cep=mCEP(e.target.value);e.target.value=S.cep};
   document.getElementById('inasc').onchange=e=>{S.nasc=e.target.value};
