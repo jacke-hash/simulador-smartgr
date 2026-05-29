@@ -65,6 +65,8 @@ select.inp{appearance:none;cursor:pointer}
 .brow{display:flex;gap:10px;margin-top:6px}
 .brow .btn{margin-top:0;flex:1}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1d4ed8;color:#fff;border:1px solid #60a5fa;border-radius:9px;padding:12px 24px;font-weight:700;font-size:13px;z-index:99;white-space:nowrap;animation:su .25s ease;box-shadow:0 4px 24px rgba(37,99,235,.4)}
+.toast.ok{background:#16a34a;border-color:#22c55e}
+.toast.er{background:#991b1b;border-color:#f87171}
 @keyframes su{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 @media(max-width:480px){.r2,.r3{grid-template-columns:1fr}.hdr img{height:30px}.pbv{font-size:30px}}
 </style>
@@ -74,11 +76,14 @@ select.inp{appearance:none;cursor:pointer}
 <script>
 const TC=0.0189;
 const WH="https://script.google.com/macros/s/AKfycbx1oB66fNf31nh79qmLDdhJU7WLhTmW5ZcdrFsBiFCzxbEC32pEGhrXysh7vXG_SAc5Ww/exec";
+const SORTER_BASE="https://api.sortercurve.com.br";
+const SORTER_USER="API.GRMED";
+const SORTER_PASS="SRG@2026";
 const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
 const PZS=[3,6,9,12,15,18,21,24];
 const CRS=[30,60,90];
 
-let S={scr:1,cpf:'',tel:'',nasc:'',cep:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,saved:false};
+let S={scr:1,cpf:'',tel:'',nasc:'',cep:'',numero:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,toast:null};
 
 const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fFmt=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
@@ -123,34 +128,99 @@ function val1(){
   if(S.tel.replace(/\D/g,'').length<10)e.tel='Telefone inválido';
   if(!S.nasc)e.nasc='Obrigatório';
   if(S.cep.replace(/\D/g,'').length<8)e.cep='CEP inválido';
+  if(!S.numero.trim())e.numero='Obrigatório';
   if(!S.vend.trim())e.vend='Obrigatório';
   if(!S.prods.length)e.prods='Selecione ao menos 1 produto';
   S.err=e;return!Object.keys(e).length;
 }
 
+function showToast(msg, tipo='ok', duracao=4000){
+  S.toast={msg,tipo};render();
+  setTimeout(()=>{S.toast=null;render();},duracao);
+}
+
+async function getSorterToken(){
+  const creds=btoa(`${SORTER_USER}:${SORTER_PASS}`);
+  const res=await fetch(`${SORTER_BASE}/Seguranca/GetToken`,{
+    method:'GET',
+    headers:{'Authorization':`Basic ${creds}`,'Content-Type':'application/json'}
+  });
+  if(!res.ok) throw new Error(`Auth Sorter falhou: ${res.status}`);
+  const data=await res.json();
+  return data.token;
+}
+
+async function enviarSorter(prod){
+  const token=await getSorterToken();
+  const cpfLimpo=S.cpf.replace(/\D/g,'');
+  const telLimpo=S.tel.replace(/\D/g,'');
+  const cepLimpo=S.cep.replace(/\D/g,'');
+  const c=calc(prod);
+  const body={
+    rendaPresumida:0,
+    telefone:telLimpo,
+    valorVenda:S.sims[prod]?S.sims[prod].vc:0,
+    numeroParcelas:S.prazo,
+    cep:cepLimpo,
+    numero:S.numero,
+    tipo:'CPF',
+    documento:cpfLimpo,
+    documentoFormatado:S.cpf,
+    regrasId:null,
+    vendedorId:null,
+    vendedor:S.vend,
+    origem:'',
+    skipCheck:true,
+    formularioId:null
+  };
+  const res=await fetch(`${SORTER_BASE}/SorterCurve/v1/analise`,{
+    method:'POST',
+    headers:{
+      'Authorization':`Bearer ${token}`,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify(body)
+  });
+  if(!res.ok){
+    const err=await res.text();
+    throw new Error(`Sorter erro ${res.status}: ${err}`);
+  }
+  return await res.text();
+}
+
 async function save(){
   S.busy=true;render();
-  let sucesso=0;
+  
+  // 1. Salvar na planilha
   for(const prod of S.prods){
     const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
     const row={
-      cpf:S.cpf,telefone:S.tel,dataNasc:S.nasc,cep:S.cep,vendedor:S.vend,produto:prod,
+      cpf:S.cpf,telefone:S.tel,dataNasc:S.nasc,cep:S.cep,numero:S.numero,vendedor:S.vend,produto:prod,
       valorCompra:s.vc.toFixed(2),entrada:s.en.toFixed(2),valorParcelado:c.vp.toFixed(2),
       tc:'1,89%',prazo:S.prazo,carencia:S.car,parcela:c.p.toFixed(2),totalPago:c.tot.toFixed(2),
       totalComEntrada:s.vc.toFixed(2),vmp:S.vmp.toFixed(2),numPacientes:c.np,
       data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR')
     };
     try{
-      const url=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
       const img=new Image();
-      img.src=url;
-      sucesso++;
-    }catch(e){console.error('Erro ao salvar:',e);}
+      img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
+    }catch(e){console.error('Erro planilha:',e);}
   }
-  // Aguarda ~1s para o Apps Script processar antes de mostrar confirmação
+
   await new Promise(r=>setTimeout(r,1200));
-  S.busy=false;S.saved=true;render();
-  setTimeout(()=>{S.saved=false;render()},3500);
+
+  // 2. Enviar para o Sorter (usa primeiro produto como referência)
+  try{
+    for(const prod of S.prods){
+      await enviarSorter(prod);
+    }
+    S.busy=false;
+    showToast(`✓ ${S.prods.length} linha(s) salvas · Análise Sorter enviada!`,'ok');
+  }catch(e){
+    console.error('Erro Sorter:',e);
+    S.busy=false;
+    showToast(`✓ Planilha salva · Sorter: ${e.message}`,'er',6000);
+  }
 }
 
 function psHTML(prod,i){
@@ -188,6 +258,7 @@ function s2HTML(){
     <div class="cii"><span>CPF</span><strong>${S.cpf}</strong></div>
     <div class="cii"><span>Telefone</span><strong>${S.tel}</strong></div>
     <div class="cii"><span>CEP</span><strong>${S.cep}</strong></div>
+    <div class="cii"><span>Número</span><strong>${S.numero}</strong></div>
     <div class="cii"><span>Nascimento</span><strong>${nascFmt}</strong></div>
     <div class="cii"><span>Vendedor</span><strong>${S.vend}</strong></div>
   </div>
@@ -209,7 +280,7 @@ function s2HTML(){
   <div class="brow">
     <button class="btnb" id="bbk">← Voltar</button>
     <button class="btn" id="bsv" ${S.busy?'disabled':''}>
-      ${S.busy?'Salvando...':`💾 Salvar${S.prods.length>1?' ('+S.prods.length+' linhas)':''} na Planilha`}
+      ${S.busy?'Salvando e consultando Sorter...':`💾 Salvar${S.prods.length>1?' ('+S.prods.length+' linhas)':''} e Consultar Sorter`}
     </button>
   </div>`;
 }
@@ -226,20 +297,24 @@ function s1HTML(){
         <input class="inp" id="itel" placeholder="(00) 00000-0000" value="${S.tel}" maxlength="15">
         ${S.err.tel?`<div class="err">${S.err.tel}</div>`:''}
       </div>
-      <div class="fld"><label class="lbl">CEP</label>
-        <input class="inp" id="icep" placeholder="00000-000" value="${S.cep}" maxlength="9">
-        ${S.err.cep?`<div class="err">${S.err.cep}</div>`:''}
-      </div>
-    </div>
-    <div class="r2">
       <div class="fld"><label class="lbl">Data de Nascimento</label>
         <input class="inp" id="inasc" type="date" value="${S.nasc}">
         ${S.err.nasc?`<div class="err">${S.err.nasc}</div>`:''}
       </div>
-      <div class="fld"><label class="lbl">Vendedor</label>
-        <input class="inp" id="ivend" placeholder="Nome do vendedor" value="${S.vend}">
-        ${S.err.vend?`<div class="err">${S.err.vend}</div>`:''}
+    </div>
+    <div class="r2">
+      <div class="fld"><label class="lbl">CEP</label>
+        <input class="inp" id="icep" placeholder="00000-000" value="${S.cep}" maxlength="9">
+        ${S.err.cep?`<div class="err">${S.err.cep}</div>`:''}
       </div>
+      <div class="fld"><label class="lbl">Número da Residência</label>
+        <input class="inp" id="inumero" placeholder="Ex: 123" value="${S.numero}">
+        ${S.err.numero?`<div class="err">${S.err.numero}</div>`:''}
+      </div>
+    </div>
+    <div class="fld"><label class="lbl">Vendedor</label>
+      <input class="inp" id="ivend" placeholder="Nome do vendedor" value="${S.vend}">
+      ${S.err.vend?`<div class="err">${S.err.vend}</div>`:''}
     </div>
   </div>
   <div class="card">
@@ -283,6 +358,7 @@ function bind1(){
   document.getElementById('itel').oninput=e=>{S.tel=mTel(e.target.value);e.target.value=S.tel};
   document.getElementById('icep').oninput=e=>{S.cep=mCEP(e.target.value);e.target.value=S.cep};
   document.getElementById('inasc').onchange=e=>{S.nasc=e.target.value};
+  document.getElementById('inumero').oninput=e=>{S.numero=e.target.value};
   document.getElementById('ivend').oninput=e=>{S.vend=e.target.value};
   document.getElementById('bnxt').onclick=()=>{if(val1()){S.scr=2;render();}else render()};
   document.querySelectorAll('.pc[data-tp]').forEach(el=>el.onclick=()=>togP(el.dataset.tp));
@@ -301,7 +377,7 @@ function render(){
     <div class="stp${!is1?' on':''}">② Simulação</div>
   </div>
   <div class="wrap">${is1?s1HTML():s2HTML()}</div>
-  ${S.saved?`<div class="toast">✓ ${S.prods.length} linha(s) salvas com sucesso!</div>`:''}`;
+  ${S.toast?`<div class="toast ${S.toast.tipo}">${S.toast.msg}</div>`:''}`;
   if(is1)bind1();else bind2();
 }
 render();
