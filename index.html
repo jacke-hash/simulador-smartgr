@@ -26,7 +26,10 @@ select.inp{appearance:none;cursor:pointer}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .doc-row{display:grid;grid-template-columns:110px 1fr;gap:8px}
-.doc-select-wrap{position:relative;display:block}.doc-select-wrap::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:14px;pointer-events:none}.doc-select{width:100%;background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 32px 11px 10px;font-size:14px;color:#60a5fa;outline:none;transition:.18s;font-family:inherit;appearance:none;cursor:pointer;font-weight:600}.doc-select:focus{border-color:#3b82f6;background:#010810}
+.doc-select-wrap{position:relative;display:block}
+.doc-select-wrap::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:14px;pointer-events:none}
+.doc-select{width:100%;background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 32px 11px 10px;font-size:14px;color:#60a5fa;outline:none;transition:.18s;font-family:inherit;appearance:none;cursor:pointer;font-weight:600}
+.doc-select:focus{border-color:#3b82f6;background:#010810}
 .btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:.18s;letter-spacing:.3px}
 .btn:hover{background:#2563eb}
 .btn:disabled{background:#0a1830;color:#4a7ab8;cursor:not-allowed}
@@ -69,7 +72,7 @@ select.inp{appearance:none;cursor:pointer}
 .toast.ok{background:#16a34a;border-color:#22c55e}
 .toast.er{background:#991b1b;border-color:#f87171}
 @keyframes su{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@media(max-width:480px){.r2,.r3,.doc-row{grid-template-columns:1fr}.doc-row{grid-template-columns:100px 1fr}.hdr img{height:30px}.pbv{font-size:30px}}
+@media(max-width:480px){.r2,.r3,.doc-row{grid-template-columns:1fr}.doc-row{grid-template-columns:100px 1fr}.pbv{font-size:30px}}
 </style>
 </head>
 <body>
@@ -77,10 +80,11 @@ select.inp{appearance:none;cursor:pointer}
 <script>
 const TC=0.0189;
 const WH="https://script.google.com/macros/s/AKfycbx1oB66fNf31nh79qmLDdhJU7WLhTmW5ZcdrFsBiFCzxbEC32pEGhrXysh7vXG_SAc5Ww/exec";
-const SORTER_BASE="https://api.sortercurve.com.br";
-const SORTER_AUTH_BASE="https://api.sortercurve.com.br";
+const SORTER_AUTH="https://api-seguranca.sortercurve.com.br";
+const SORTER_API="https://api.sortercurve.com.br/sortercurve";
 const SORTER_USER="API.GRMED";
-const SORTER_PASS="sgr@1234";
+const SORTER_PASS="SRG@2026";
+
 const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
 const PZS=[3,6,9,12,15,18,21,24];
 const CRS=[30,60,90];
@@ -94,16 +98,10 @@ function parsePT(v){
   const c=v.replace(/[^\d,.]/g,'');if(!c)return 0;
   return c.includes(',')?parseFloat(c.replace(/\./g,'').replace(',','.'))||0:parseFloat(c.replace(/\./g,''))||0;
 }
-
-function mDoc(v, tipo){
+function mDoc(v,tipo){
   const d=v.replace(/\D/g,'');
-  if(tipo==='CPF'){
-    const s=d.slice(0,11);
-    return s.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-  } else {
-    const s=d.slice(0,14);
-    return s.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
-  }
+  if(tipo==='CPF'){const s=d.slice(0,11);return s.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');}
+  else{const s=d.slice(0,14);return s.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');}
 }
 function mTel(v){const d=v.replace(/\D/g,'').slice(0,11);if(!d)return'';if(d.length<=2)return`(${d}`;if(d.length<=7)return`(${d.slice(0,2)}) ${d.slice(2)}`;return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`}
 function mCEP(v){const d=v.replace(/\D/g,'').slice(0,8);return d.length>5?`${d.slice(0,5)}-${d.slice(5)}`:d}
@@ -137,8 +135,8 @@ function togP(name){
 function val1(){
   const e={};
   const docLimpo=S.doc.replace(/\D/g,'');
-  if(S.tipoDoc==='CPF' && docLimpo.length<11) e.doc='CPF inválido';
-  if(S.tipoDoc==='CNPJ' && docLimpo.length<14) e.doc='CNPJ inválido';
+  if(S.tipoDoc==='CPF'&&docLimpo.length<11)e.doc='CPF inválido';
+  if(S.tipoDoc==='CNPJ'&&docLimpo.length<14)e.doc='CNPJ inválido';
   if(S.tel.replace(/\D/g,'').length<10)e.tel='Telefone inválido';
   if(!S.nasc)e.nasc='Obrigatório';
   if(S.cep.replace(/\D/g,'').length<8)e.cep='CEP inválido';
@@ -153,96 +151,116 @@ function showToast(msg,tipo='ok',duracao=4000){
   setTimeout(()=>{S.toast=null;render();},duracao);
 }
 
+// ─── SORTER: Token (válido 24h — idealmente cachear) ───────────────────────
 async function getSorterToken(){
-  const creds=btoa(`${SORTER_USER}:${SORTER_PASS}`);
-
-  const res=await fetch(`${SORTER_AUTH_BASE}/Seguranca/GetToken`,{
+  const basic=btoa(`${SORTER_USER}:${SORTER_PASS}`);
+  const r=await fetch(`${SORTER_AUTH}/seguranca/gettoken`,{
     method:'GET',
-    headers:{
-      'Authorization':`Basic ${creds}`
-    }
+    headers:{Authorization:`Basic ${basic}`}
   });
-
-  const data = await res.json();
-
-  console.log('TOKEN RESPONSE:', data);
-
-  if(data.tipoRetorno !== 0){
-    throw new Error(
-      `GetToken retornou tipoRetorno=${data.tipoRetorno} token=${data.token}`
-    );
-  }
-
+  if(!r.ok) throw new Error(`GetToken HTTP ${r.status}`);
+  const data=await r.json();
+  if(data.tipoRetorno!==0) throw new Error(`GetToken erro tipoRetorno=${data.tipoRetorno}`);
   return data.token;
 }
 
+// ─── SORTER: Busca regra padrão pelo tipo (CPF ou CNPJ) ────────────────────
+async function getRegraId(token, tipo){
+  const r=await fetch(`${SORTER_API}/v1/regras`,{
+    method:'GET',
+    headers:{Authorization:`Bearer ${token}`}
+  });
+  if(!r.ok) throw new Error(`Regras HTTP ${r.status}`);
+  const regras=await r.json();
+  // Prioridade: padrão do tipo → qualquer ativa do tipo
+  const padrao=regras.find(x=>x.tipo===tipo&&x.padrao===true&&x.ativo===true);
+  const qualquer=regras.find(x=>x.tipo===tipo&&x.ativo===true);
+  const regra=padrao||qualquer;
+  if(!regra) throw new Error(`Nenhuma regra ativa encontrada para ${tipo}`);
+  return regra.regraId;
+}
+
+// ─── SORTER: Cria análise e aguarda resultado ───────────────────────────────
 async function enviarSorter(prod){
-const token = await getSorterToken();
-const regras = await getRegras(token);
-console.log('REGRAS JSON:', regras);
-throw new Error('Parar teste');
+  const token=await getSorterToken();
+  const regraId=await getRegraId(token, S.tipoDoc);
 
-  const docLimpo = S.doc.replace(/\D/g,'');
-  const telLimpo = S.tel.replace(/\D/g,'');
-  const cepLimpo = S.cep.replace(/\D/g,'');
+  const docLimpo=S.doc.replace(/\D/g,'');
+  const telLimpo=S.tel.replace(/\D/g,'');
+  const cepLimpo=S.cep.replace(/\D/g,'');
+  const valorVenda=S.sims[prod]?S.sims[prod].vc:0;
 
-  const body = {
-    rendaPresumida: 0,
-    telefone: telLimpo,
-    valorVenda: S.sims[prod] ? S.sims[prod].vc : 0,
-    numeroParcelas: S.prazo,
-    cep: cepLimpo,
-    numero: S.numero,
+  const body={
+    regraId: regraId,
     tipo: S.tipoDoc,
-    documento: docLimpo,
-    documentoFormatado: S.doc,
-
-    regraId: "4b3e2f2e-8717-43ac-a3a1-92fcc3d874c1",
-
-    vendedorId: null,
-    vendedor: S.vend,
-    origem: '',
-    skipCheck: true,
-    formularioId: null
+    documentoFormatado: S.doc,   // com máscara — manual aceita com ou sem
+    valorVenda: valorVenda,
+    rendaPresumida: 0,
+    prazoEmDias: S.prazo,        // campo correto conforme manual
+    telefone: telLimpo,
+    cep: cepLimpo
   };
 
-  const res = await fetch(
-    `${SORTER_BASE}/SorterCurve/v1/analise`,
-    {
-      method:'POST',
-      headers:{
-        Authorization:`Bearer ${token}`,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify(body)
-    }
-  );
+  const r=await fetch(`${SORTER_API}/v1/analise`,{
+    method:'POST',
+    headers:{
+      Authorization:`Bearer ${token}`,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify(body)
+  });
 
-  const retorno = await res.text();
+  const txt=await r.text();
+  if(!r.ok) throw new Error(`Sorter POST erro ${r.status}: ${txt}`);
 
-  console.log('RESPOSTA ANALISE:', retorno);
+  let analiseId;
+  try{ analiseId=JSON.parse(txt).analiseDocumentoId; }
+  catch(e){ throw new Error(`Resposta inesperada do Sorter: ${txt}`); }
 
-  if(!res.ok){
-    throw new Error(`Sorter erro ${res.status}: ${retorno}`);
+  if(!analiseId) throw new Error('analiseDocumentoId não retornado');
+
+  // Salva o ID na planilha para referência futura
+  salvarResultadoPlanilha(prod, analiseId, token);
+
+  return analiseId;
+}
+
+// ─── SORTER: Salva resultado na planilha (assíncrono, não bloqueia UI) ──────
+async function salvarResultadoPlanilha(prod, analiseId, token){
+  // Aguarda processamento do Sorter (até 10s, polling a cada 2s)
+  let resultado=null;
+  for(let i=0;i<5;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{
+      const r=await fetch(`${SORTER_API}/v1/analise/${analiseId}`,{
+        method:'GET',
+        headers:{Authorization:`Bearer ${token}`}
+      });
+      if(r.ok){
+        resultado=await r.json();
+        if(resultado.decisao!==null && resultado.decisao!==undefined) break;
+      }
+    }catch(e){console.warn('Polling Sorter:',e);}
   }
 
-  return retorno;
+  if(!resultado) return;
+
+  const decisaoMap={1:'Não Recomendado',2:'Recomendado',3:'Em Análise',4:'Análise Não Concluída',5:'Não Rec. Manual',6:'Rec. Manual',7:'Reanálise',8:'Em Análise Jurídica'};
+  const row={
+    cpf:S.doc, produto:prod,
+    sorterAnaliseId:analiseId,
+    sorterDecisao:decisaoMap[resultado.decisao]||resultado.decisao,
+    sorterNome:resultado.nome||'',
+    sorterScore:resultado.dadosAnalise?.score||resultado.dadosAnalise?.comportamental?.score||'',
+    data:new Date().toLocaleDateString('pt-BR'),
+    hora:new Date().toLocaleTimeString('pt-BR'),
+    tipo:'RESULTADO_SORTER'
+  };
+  const img=new Image();
+  img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
 }
 
-  async function getRegras(token) {
-  const res = await fetch(
-    'https://api.sortercurve.com.br/SorterCurve/v1/regras',
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
-
-  return await res.json();
-}
-
+// ─── SALVAR TUDO ────────────────────────────────────────────────────────────
 async function save(){
   S.busy=true;render();
 
@@ -257,25 +275,23 @@ async function save(){
       totalComEntrada:s.vc.toFixed(2),vmp:S.vmp.toFixed(2),numPacientes:c.np,
       data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR')
     };
-    try{
-      const img=new Image();
-      img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
-    }catch(e){console.error('Erro planilha:',e);}
+    try{const img=new Image();img.src=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;}
+    catch(e){console.error('Erro planilha:',e);}
   }
 
   await new Promise(r=>setTimeout(r,1200));
 
-  // 2. Enviar para o Sorter
+  // 2. Enviar ao Sorter
   try{
     for(const prod of S.prods){
       await enviarSorter(prod);
     }
     S.busy=false;
-    showToast(`✓ ${S.prods.length} linha(s) salvas · Análise Sorter enviada!`,'ok');
+    showToast(`✓ Salvo · Análise Sorter enviada! Resultado em instantes.`,'ok');
   }catch(e){
     console.error('Erro Sorter:',e);
     S.busy=false;
-    showToast(`✓ Planilha salva · Sorter: ${e.message}`,'er',6000);
+    showToast(`✓ Planilha salva · Sorter: ${e.message}`,'er',7000);
   }
 }
 
@@ -348,13 +364,15 @@ function s1HTML(){
     <div class="fld">
       <label class="lbl">${S.tipoDoc}</label>
       <div class="doc-row">
-        <div class="doc-select-wrap"><select class="doc-select" id="itipoDoc">
-          <option value="CPF"${isCPF?' selected':''}>CPF</option>
-          <option value="CNPJ"${!isCPF?' selected':''}>CNPJ</option>
-        </select></div>
-        <input class="inp" id="idoc" 
-          placeholder="${isCPF?'000.000.000-00':'00.000.000/0000-00'}" 
-          value="${S.doc}" 
+        <div class="doc-select-wrap">
+          <select class="doc-select" id="itipoDoc">
+            <option value="CPF"${isCPF?' selected':''}>CPF</option>
+            <option value="CNPJ"${!isCPF?' selected':''}>CNPJ</option>
+          </select>
+        </div>
+        <input class="inp" id="idoc"
+          placeholder="${isCPF?'000.000.000-00':'00.000.000/0000-00'}"
+          value="${S.doc}"
           maxlength="${isCPF?14:18}"
           inputmode="numeric">
       </div>
@@ -422,16 +440,8 @@ function bind2(){
 }
 
 function bind1(){
-  document.getElementById('itipoDoc').onchange=e=>{
-    S.tipoDoc=e.target.value;
-    S.doc='';
-    S.err.doc='';
-    render();
-  };
-  document.getElementById('idoc').oninput=e=>{
-    S.doc=mDoc(e.target.value,S.tipoDoc);
-    e.target.value=S.doc;
-  };
+  document.getElementById('itipoDoc').onchange=e=>{S.tipoDoc=e.target.value;S.doc='';S.err.doc='';render();};
+  document.getElementById('idoc').oninput=e=>{S.doc=mDoc(e.target.value,S.tipoDoc);e.target.value=S.doc;};
   document.getElementById('itel').oninput=e=>{S.tel=mTel(e.target.value);e.target.value=S.tel};
   document.getElementById('icep').oninput=e=>{S.cep=mCEP(e.target.value);e.target.value=S.cep};
   document.getElementById('inasc').onchange=e=>{S.nasc=e.target.value};
