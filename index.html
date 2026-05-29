@@ -26,8 +26,7 @@ select.inp{appearance:none;cursor:pointer}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .doc-row{display:grid;grid-template-columns:110px 1fr;gap:8px}
-.doc-select{background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 10px;font-size:14px;color:#e8f2ff;outline:none;transition:.18s;font-family:inherit;appearance:none;cursor:pointer;font-weight:600;color:#60a5fa}
-.doc-select:focus{border-color:#3b82f6;background:#010810}
+.doc-select-wrap{position:relative;display:block}.doc-select-wrap::after{content:"▾";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#60a5fa;font-size:14px;pointer-events:none}.doc-select{width:100%;background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 32px 11px 10px;font-size:14px;color:#60a5fa;outline:none;transition:.18s;font-family:inherit;appearance:none;cursor:pointer;font-weight:600}.doc-select:focus{border-color:#3b82f6;background:#010810}
 .btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:.18s;letter-spacing:.3px}
 .btn:hover{background:#2563eb}
 .btn:disabled{background:#0a1830;color:#4a7ab8;cursor:not-allowed}
@@ -306,10 +305,10 @@ function s1HTML(){
     <div class="fld">
       <label class="lbl">${S.tipoDoc}</label>
       <div class="doc-row">
-        <select class="doc-select" id="itipoDoc">
+        <div class="doc-select-wrap"><select class="doc-select" id="itipoDoc">
           <option value="CPF"${isCPF?' selected':''}>CPF</option>
           <option value="CNPJ"${!isCPF?' selected':''}>CNPJ</option>
-        </select>
+        </select></div>
         <input class="inp" id="idoc" 
           placeholder="${isCPF?'000.000.000-00':'00.000.000/0000-00'}" 
           value="${S.doc}" 
