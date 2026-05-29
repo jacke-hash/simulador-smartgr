@@ -78,6 +78,7 @@ select.inp{appearance:none;cursor:pointer}
 const TC=0.0189;
 const WH="https://script.google.com/macros/s/AKfycbx1oB66fNf31nh79qmLDdhJU7WLhTmW5ZcdrFsBiFCzxbEC32pEGhrXysh7vXG_SAc5Ww/exec";
 const SORTER_BASE="https://api.sortercurve.com.br";
+const SORTER_AUTH_BASE="https://api-seguranca.sortercurve.com.br";
 const SORTER_USER="API.GRMED";
 const SORTER_PASS="SRG@2026";
 const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
@@ -154,7 +155,7 @@ function showToast(msg,tipo='ok',duracao=4000){
 
 async function getSorterToken(){
   const creds=btoa(`${SORTER_USER}:${SORTER_PASS}`);
-  const res=await fetch(`${SORTER_BASE}/Seguranca/GetToken`,{
+  const res=await fetch(`${SORTER_AUTH_BASE}/seguranca/gettoken`,{
     method:'GET',
     headers:{'Authorization':`Basic ${creds}`,'Content-Type':'application/json'}
   });
