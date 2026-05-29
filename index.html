@@ -187,15 +187,20 @@ async function getRegras(token) {
     }
   );
 
-  const data = await res.json();
+  console.log('STATUS REGRAS:', res.status);
 
-  console.log('REGRAS:', data);
+  const txt = await res.text();
 
-  return data;
+  console.log('BODY REGRAS:', txt);
+
+  return txt;
 }
 
 async function enviarSorter(prod){
   const token=await getSorterToken();
+    const regras = await getRegras(token);
+  console.log('REGRAS:', regras);
+  return;
   const docLimpo=S.doc.replace(/\D/g,'');
   const telLimpo=S.tel.replace(/\D/g,'');
   const cepLimpo=S.cep.replace(/\D/g,'');
