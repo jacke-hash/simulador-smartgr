@@ -176,6 +176,24 @@ async function getSorterToken(){
   return data.token;
 }
 
+async function getRegras(token) {
+  const res = await fetch(
+    'https://api.sortercurve.com.br/SorterCurve/v1/regras',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  const data = await res.json();
+
+  console.log('REGRAS:', data);
+
+  return data;
+}
+
 async function enviarSorter(prod){
   const token=await getSorterToken();
   const docLimpo=S.doc.replace(/\D/g,'');
@@ -410,6 +428,8 @@ function bind1(){
   document.getElementById('bnxt').onclick=()=>{if(val1()){S.scr=2;render();}else render()};
   document.querySelectorAll('.pc[data-tp]').forEach(el=>el.onclick=()=>togP(el.dataset.tp));
 }
+
+function 
 
 function render(){
   const app=document.getElementById('app');
