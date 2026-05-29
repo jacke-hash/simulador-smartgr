@@ -176,67 +176,55 @@ async function getSorterToken(){
   return data.token;
 }
 
-async function getRegras(token) {
+async function enviarSorter(prod){
+  const token = await getSorterToken();
+
+  const docLimpo = S.doc.replace(/\D/g,'');
+  const telLimpo = S.tel.replace(/\D/g,'');
+  const cepLimpo = S.cep.replace(/\D/g,'');
+
+  const body = {
+    rendaPresumida: 0,
+    telefone: telLimpo,
+    valorVenda: S.sims[prod] ? S.sims[prod].vc : 0,
+    numeroParcelas: S.prazo,
+    cep: cepLimpo,
+    numero: S.numero,
+    tipo: S.tipoDoc,
+    documento: docLimpo,
+    documentoFormatado: S.doc,
+
+    regraId: "4b3e2f2e-8717-43ac-a3a1-92fcc3d874c1",
+
+    vendedorId: null,
+    vendedor: S.vend,
+    origem: '',
+    skipCheck: true,
+    formularioId: null
+  };
+
   const res = await fetch(
-    'https://api.sortercurve.com.br/SorterCurve/v1/regras',
+    `${SORTER_BASE}/SorterCurve/v1/analise`,
     {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      method:'POST',
+      headers:{
+        Authorization:`Bearer ${token}`,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify(body)
     }
   );
 
-  console.log('STATUS REGRAS:', res.status);
+  const retorno = await res.text();
 
-  const txt = await res.text();
+  console.log('RESPOSTA ANALISE:', retorno);
 
-  console.log('BODY REGRAS:', txt);
-
-  return txt;
-}
-
-async function enviarSorter(prod){
-  const token=await getSorterToken();
-    const regras = await getRegras(token);
-  console.log('REGRAS:', regras);
-  return;
-  const docLimpo=S.doc.replace(/\D/g,'');
-  const telLimpo=S.tel.replace(/\D/g,'');
-  const cepLimpo=S.cep.replace(/\D/g,'');
-  const body={
-    rendaPresumida:0,
-    telefone:telLimpo,
-    valorVenda:S.sims[prod]?S.sims[prod].vc:0,
-    numeroParcelas:S.prazo,
-    cep:cepLimpo,
-    numero:S.numero,
-    tipo:S.tipoDoc,
-    documento:docLimpo,
-    documentoFormatado:S.doc,
-    regrasId:null,
-    vendedorId:null,
-    vendedor:S.vend,
-    origem:'',
-    skipCheck:true,
-    formularioId:null
-  };
-const analise = await res.json();
-
-console.log('ANALISE CRIADA:', analise);
-
-const consulta = await fetch(
-  `${SORTER_BASE}/SorterCurve/v1/analise/${analise.analiseDocumentoId}`,
-  {
-    headers:{
-      Authorization:`Bearer ${token}`
-    }
+  if(!res.ok){
+    throw new Error(`Sorter erro ${res.status}: ${retorno}`);
   }
-);
 
-const resultado = await consulta.json();
-
-console.log('RESULTADO COMPLETO:', resultado);
+  return retorno;
+}
 
 async function save(){
   S.busy=true;render();
