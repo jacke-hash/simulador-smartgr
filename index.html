@@ -221,20 +221,22 @@ async function enviarSorter(prod){
     skipCheck:true,
     formularioId:null
   };
-  const res=await fetch(`${SORTER_BASE}/SorterCurve/v1/analise`,{
-    method:'POST',
+const analise = await res.json();
+
+console.log('ANALISE CRIADA:', analise);
+
+const consulta = await fetch(
+  `${SORTER_BASE}/SorterCurve/v1/analise/${analise.analiseDocumentoId}`,
+  {
     headers:{
-      'Authorization':`Bearer ${token}`,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify(body)
-  });
-  if(!res.ok){
-    const err=await res.text();
-    throw new Error(`Sorter erro ${res.status}: ${err}`);
+      Authorization:`Bearer ${token}`
+    }
   }
-  return await res.text();
-}
+);
+
+const resultado = await consulta.json();
+
+console.log('RESULTADO COMPLETO:', resultado);
 
 async function save(){
   S.busy=true;render();
