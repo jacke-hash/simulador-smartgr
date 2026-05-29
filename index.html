@@ -196,9 +196,10 @@ async function enviarSorter(prod){
     documentoFormatado: S.doc,   // com máscara — manual aceita com ou sem
     valorVenda: valorVenda,
     rendaPresumida: 0,
-    prazoEmDias: S.prazo,        // campo correto conforme manual
+    prazoEmDias: S.prazo,
     telefone: telLimpo,
-    cep: cepLimpo
+    cep: cepLimpo,
+    numero: S.numero
   };
 
   const r=await fetch(`${SORTER_API}/v1/analise`,{
