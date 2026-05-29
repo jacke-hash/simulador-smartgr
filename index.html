@@ -73,7 +73,7 @@ select.inp{appearance:none;cursor:pointer}
 <div id="app"></div>
 <script>
 const TC=0.0189;
-const WH="https://script.google.com/macros/s/AKfycbw3P4LX5L5Mq4wpnDQBnm2EvhFD7KwSnkz8Icuj0qzA7y81Oc8y4lBvUNYrls7N2QX2BQ/exec";
+const WH="https://script.google.com/macros/s/AKfycbxal8-2m3EGL5e-Qvhl5B6qRUxcHsrEIRafam3jYSsutJVkaCpZCn82beerko_E1lJT4w/exec";
 const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
 const PZS=[3,6,9,12,15,18,21,24];
 const CRS=[30,60,90];
@@ -130,6 +130,7 @@ function val1(){
 
 async function save(){
   S.busy=true;render();
+  let sucesso=0;
   for(const prod of S.prods){
     const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
     const row={
@@ -140,12 +141,14 @@ async function save(){
       data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR')
     };
     try{
-      await fetch(`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`,{
-        method:'GET',
-        mode:'no-cors'
-      });
+      const url=`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`;
+      const img=new Image();
+      img.src=url;
+      sucesso++;
     }catch(e){console.error('Erro ao salvar:',e);}
   }
+  // Aguarda ~1s para o Apps Script processar antes de mostrar confirmação
+  await new Promise(r=>setTimeout(r,1200));
   S.busy=false;S.saved=true;render();
   setTimeout(()=>{S.saved=false;render()},3500);
 }
