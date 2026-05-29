@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Financiamento — Smart GR</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#010812;font-family:'Segoe UI',system-ui,sans-serif;color:#e8f2ff;min-height:100vh}
+.hdr{background:#020d20;border-bottom:1px solid #1a3a6a;padding:12px 28px;display:flex;align-items:center;justify-content:space-between}
+.hdr img{height:38px;width:auto}
+.hdr-sub{font-size:10px;color:#7ab3e8;letter-spacing:1.5px;text-transform:uppercase}
+.stps{display:flex;border-bottom:1px solid #1a3a6a}
+.stp{flex:1;padding:10px;text-align:center;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:#7ab3e8;border-bottom:2px solid transparent;transition:.2s}
+.stp.on{color:#60a5fa;border-bottom-color:#2563eb}
+.stp.ok{color:#22c55e;border-bottom-color:#16a34a}
+.wrap{max-width:640px;margin:0 auto;padding:26px 16px 100px;animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:#050f24;border:1px solid #1a3a6a;border-radius:12px;padding:22px;margin-bottom:14px}
+.ct{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#90bce8;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.fld{margin-bottom:14px}
+.lbl{font-size:11px;color:#a0c8f4;margin-bottom:5px;display:block;letter-spacing:.4px;text-transform:uppercase;font-weight:600}
+.inp{width:100%;background:#020c1e;border:1px solid #1e4070;border-radius:8px;padding:11px 13px;font-size:15px;color:#e8f2ff;outline:none;transition:.18s;font-family:inherit}
+.inp:focus{border-color:#3b82f6;background:#010810}
+.inp::placeholder{color:#2a5080}
+select.inp{appearance:none;cursor:pointer}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;transition:.18s;letter-spacing:.3px}
+.btn:hover{background:#2563eb}
+.btn:disabled{background:#0a1830;color:#4a7ab8;cursor:not-allowed}
+.btnb{background:transparent;color:#a0c8f4;border:1px solid #1e4070;border-radius:8px;padding:11px 18px;font-size:13px;cursor:pointer;font-family:inherit;transition:.18s}
+.btnb:hover{border-color:#3b82f6;color:#60a5fa}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:8px}
+.pc{background:#020c1e;border:1px solid #1e4070;border-radius:9px;padding:12px 12px 12px 10px;cursor:pointer;transition:.18s;display:flex;align-items:flex-start;gap:9px;user-select:none}
+.pc:hover:not(.ds){border-color:#2563eb;background:#030e22}
+.pc.sl{border-color:#3b82f6;background:#041228;box-shadow:0 0 0 1px #1d4ed8 inset}
+.pc.ds{opacity:.35;cursor:default;pointer-events:none}
+.pck{width:16px;height:16px;min-width:16px;border-radius:4px;border:1px solid #1e4070;display:flex;align-items:center;justify-content:center;font-size:10px;margin-top:1px;flex-shrink:0;transition:.18s}
+.pc.sl .pck{background:#1d4ed8;border-color:#60a5fa;color:#fff}
+.pcn{font-size:12px;font-weight:600;color:#a0c8f4;line-height:1.35}
+.pc.sl .pcn{color:#93c5fd}
+.phint{font-size:12px;color:#7ab3e8;margin-top:10px}
+.phint em{color:#93c5fd;font-style:normal}
+.err{font-size:11px;color:#f87171;margin-top:3px}
+.cih{background:#020d20;border:1px solid #1a3a6a;border-radius:9px;padding:12px 16px;margin-bottom:14px;display:flex;gap:18px;flex-wrap:wrap}
+.cii{font-size:10px;color:#7ab3e8}
+.cii strong{display:block;font-size:13px;color:#93c5fd;font-weight:600;margin-top:2px}
+.simsh{background:#020d20;border:1px solid #1a3a6a;border-radius:10px;padding:16px;margin-bottom:14px}
+.tcpill{background:#041228;border:1px solid #1e4070;border-radius:5px;padding:3px 9px;font-size:11px;color:#93c5fd;font-weight:700}
+.psim{background:#050f24;border:1px solid #1a3a6a;border-radius:12px;padding:20px;margin-bottom:12px}
+.psnm{font-size:11px;font-weight:700;color:#60a5fa;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.psnm::before{content:'';display:block;width:3px;height:14px;background:#3b82f6;border-radius:2px;flex-shrink:0}
+.pbig{text-align:center;padding:16px 0 12px;border-bottom:1px solid #1a3a6a;margin-bottom:14px}
+.pbl{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#7ab3e8;margin-bottom:5px}
+.pbv{font-size:38px;font-weight:800;color:#38bdf8;letter-spacing:-1.5px}
+.pbs{font-size:12px;color:#7ab3e8;margin-top:4px}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.rc{background:#020c1e;border:1px solid #183660;border-radius:8px;padding:12px}
+.rc.hi{border-color:#2563eb;background:#020c1e}
+.rcl{font-size:11px;color:#90bce8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;font-weight:500}
+.rcv{font-size:16px;font-weight:700;color:#e8f2ff}
+.rc.hi .rcv{color:#93c5fd}
+.pnote{font-size:11px;color:#60a5fa;margin-top:3px;display:none}
+.brow{display:flex;gap:10px;margin-top:6px}
+.brow .btn{margin-top:0;flex:1}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1d4ed8;color:#fff;border:1px solid #60a5fa;border-radius:9px;padding:12px 24px;font-weight:700;font-size:13px;z-index:99;white-space:nowrap;animation:su .25s ease;box-shadow:0 4px 24px rgba(37,99,235,.4)}
+@keyframes su{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media(max-width:480px){.r2,.r3{grid-template-columns:1fr}.hdr img{height:30px}.pbv{font-size:30px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const TC=0.0189;
+const WH="https://script.google.com/macros/s/AKfycbw3P4LX5L5Mq4wpnDQBnm2EvhFD7KwSnkz8Icuj0qzA7y81Oc8y4lBvUNYrls7N2QX2BQ/exec";
+const PRODS=["SMART MESO PRO","SMART MAXIMUS LIFT","SMART MULTI HIFU","SMART DEEP LASER ONE","SMART DEEP LASER DUAL","SMART MAXIMUS PLASM","SMART FFRAXION"];
+const PZS=[3,6,9,12,15,18,21,24];
+const CRS=[30,60,90];
+
+let S={scr:1,cpf:'',tel:'',nasc:'',cep:'',vend:'',prods:[],sims:{},prazo:21,car:30,vmp:3000,err:{},busy:false,saved:false};
+
+const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fFmt=v=>v>0?v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+
+function parsePT(v){
+  const c=v.replace(/[^\d,.]/g,'');if(!c)return 0;
+  return c.includes(',')?parseFloat(c.replace(/\./g,'').replace(',','.'))||0:parseFloat(c.replace(/\./g,''))||0;
+}
+function mCPF(v){const d=v.replace(/\D/g,'').slice(0,11);return d.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
+function mTel(v){const d=v.replace(/\D/g,'').slice(0,11);if(!d)return'';if(d.length<=2)return`(${d}`;if(d.length<=7)return`(${d.slice(0,2)}) ${d.slice(2)}`;return`(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`}
+function mCEP(v){const d=v.replace(/\D/g,'').slice(0,8);return d.length>5?`${d.slice(0,5)}-${d.slice(5)}`:d}
+
+function calc(prod){
+  const s=S.sims[prod]||{vc:0,en:0};
+  const vp=Math.max(0,s.vc-s.en);
+  const p=vp>0?vp*TC/(1-Math.pow(1+TC,-S.prazo)):0;
+  const tot=p*S.prazo+s.en;
+  const np=S.vmp>0?Math.ceil(p/S.vmp):0;
+  return{vp,p,tot,np};
+}
+
+function updProd(prod,i){
+  const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+  const pct=s.vc>0&&s.en>0?`${(s.en/s.vc*100).toFixed(1)}% do total`:'';
+  const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  setT('rp'+i,fBRL(c.p));setT('rvp'+i,fBRL(c.vp));setT('rtot'+i,fBRL(c.tot));
+  setT('rvc'+i,fBRL(s.vc));setT('rnp'+i,c.np);
+  const pe=document.getElementById('ipct'+i);
+  if(pe){pe.textContent=pct;pe.style.display=pct?'block':'none';}
+}
+
+function togP(name){
+  const i=S.prods.indexOf(name);
+  if(i>=0)S.prods.splice(i,1);
+  else if(S.prods.length<2){S.prods.push(name);if(!S.sims[name])S.sims[name]={vc:0,en:0};}
+  render();
+}
+
+function val1(){
+  const e={};
+  if(S.cpf.replace(/\D/g,'').length<11)e.cpf='CPF inválido';
+  if(S.tel.replace(/\D/g,'').length<10)e.tel='Telefone inválido';
+  if(!S.nasc)e.nasc='Obrigatório';
+  if(S.cep.replace(/\D/g,'').length<8)e.cep='CEP inválido';
+  if(!S.vend.trim())e.vend='Obrigatório';
+  if(!S.prods.length)e.prods='Selecione ao menos 1 produto';
+  S.err=e;return!Object.keys(e).length;
+}
+
+async function save(){
+  S.busy=true;render();
+  for(const prod of S.prods){
+    const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+    const row={
+      cpf:S.cpf,telefone:S.tel,dataNasc:S.nasc,cep:S.cep,vendedor:S.vend,produto:prod,
+      valorCompra:s.vc.toFixed(2),entrada:s.en.toFixed(2),valorParcelado:c.vp.toFixed(2),
+      tc:'1,89%',prazo:S.prazo,carencia:S.car,parcela:c.p.toFixed(2),totalPago:c.tot.toFixed(2),
+      totalComEntrada:s.vc.toFixed(2),vmp:S.vmp.toFixed(2),numPacientes:c.np,
+      data:new Date().toLocaleDateString('pt-BR'),hora:new Date().toLocaleTimeString('pt-BR')
+    };
+    try{
+      await fetch(`${WH}?data=${encodeURIComponent(JSON.stringify(row))}`,{
+        method:'GET',
+        mode:'no-cors'
+      });
+    }catch(e){console.error('Erro ao salvar:',e);}
+  }
+  S.busy=false;S.saved=true;render();
+  setTimeout(()=>{S.saved=false;render()},3500);
+}
+
+function psHTML(prod,i){
+  const s=S.sims[prod]||{vc:0,en:0};const c=calc(prod);
+  const pct=s.vc>0&&s.en>0?`${(s.en/s.vc*100).toFixed(1)}% do total`:'';
+  return`<div class="psim">
+    <div class="psnm">${prod}</div>
+    <div class="r2">
+      <div class="fld"><label class="lbl">Valor da Compra (R$)</label>
+        <input class="inp" id="ivc${i}" placeholder="Ex: 164.900,00" value="${fFmt(s.vc)}" inputmode="decimal">
+      </div>
+      <div class="fld"><label class="lbl">Entrada (R$)</label>
+        <input class="inp" id="ien${i}" placeholder="0,00" value="${fFmt(s.en)}" inputmode="decimal">
+        <div class="pnote" id="ipct${i}" style="display:${pct?'block':'none'}">${pct}</div>
+      </div>
+    </div>
+    <div class="pbig">
+      <div class="pbl">Valor da Parcela</div>
+      <div class="pbv" id="rp${i}">${fBRL(c.p)}</div>
+      <div class="pbs" id="rbs${i}">${S.prazo}x · TC 1,89% a.m. · Carência ${S.car} dias</div>
+    </div>
+    <div class="rg">
+      <div class="rc"><div class="rcl">Valor Parcelado</div><div class="rcv" id="rvp${i}">${fBRL(c.vp)}</div></div>
+      <div class="rc"><div class="rcl">Total Pago Cliente</div><div class="rcv" id="rtot${i}">${fBRL(c.tot)}</div></div>
+      <div class="rc hi"><div class="rcl">Total Recebido c/ Entrada</div><div class="rcv" id="rvc${i}">${fBRL(s.vc)}</div></div>
+      <div class="rc"><div class="rcl">Pacientes <span class="vmplbl">(${fBRL(S.vmp)}/pac)</span></div>
+        <div class="rcv" id="rnp${i}" style="color:#38bdf8;font-size:22px;font-weight:800">${c.np}</div></div>
+    </div>
+  </div>`;
+}
+
+function s2HTML(){
+  const nascFmt=S.nasc?new Date(S.nasc+'T12:00').toLocaleDateString('pt-BR'):'';
+  return`<div class="cih">
+    <div class="cii"><span>CPF</span><strong>${S.cpf}</strong></div>
+    <div class="cii"><span>Telefone</span><strong>${S.tel}</strong></div>
+    <div class="cii"><span>CEP</span><strong>${S.cep}</strong></div>
+    <div class="cii"><span>Nascimento</span><strong>${nascFmt}</strong></div>
+    <div class="cii"><span>Vendedor</span><strong>${S.vend}</strong></div>
+  </div>
+  <div class="simsh">
+    <div class="ct">Condições do Financiamento <span class="tcpill">TC 1,89% a.m.</span></div>
+    <div class="r3">
+      <div class="fld"><label class="lbl">Prazo</label>
+        <select class="inp" id="iprazo">${PZS.map(p=>`<option value="${p}"${S.prazo===p?' selected':''}>${p}x</option>`).join('')}</select>
+      </div>
+      <div class="fld"><label class="lbl">Carência 1º Vcto</label>
+        <select class="inp" id="icar">${CRS.map(c=>`<option value="${c}"${S.car===c?' selected':''}>${c} dias</option>`).join('')}</select>
+      </div>
+      <div class="fld"><label class="lbl">Valor Médio Paciente</label>
+        <input class="inp" id="ivmp" placeholder="3.000,00" value="${fFmt(S.vmp)}" inputmode="decimal">
+      </div>
+    </div>
+  </div>
+  ${S.prods.map((p,i)=>psHTML(p,i)).join('')}
+  <div class="brow">
+    <button class="btnb" id="bbk">← Voltar</button>
+    <button class="btn" id="bsv" ${S.busy?'disabled':''}>
+      ${S.busy?'Salvando...':`💾 Salvar${S.prods.length>1?' ('+S.prods.length+' linhas)':''} na Planilha`}
+    </button>
+  </div>`;
+}
+
+function s1HTML(){
+  return`<div class="card">
+    <div class="ct">Dados do Cliente</div>
+    <div class="fld"><label class="lbl">CPF</label>
+      <input class="inp" id="icpf" placeholder="000.000.000-00" value="${S.cpf}" maxlength="14">
+      ${S.err.cpf?`<div class="err">${S.err.cpf}</div>`:''}
+    </div>
+    <div class="r2">
+      <div class="fld"><label class="lbl">Telefone</label>
+        <input class="inp" id="itel" placeholder="(00) 00000-0000" value="${S.tel}" maxlength="15">
+        ${S.err.tel?`<div class="err">${S.err.tel}</div>`:''}
+      </div>
+      <div class="fld"><label class="lbl">CEP</label>
+        <input class="inp" id="icep" placeholder="00000-000" value="${S.cep}" maxlength="9">
+        ${S.err.cep?`<div class="err">${S.err.cep}</div>`:''}
+      </div>
+    </div>
+    <div class="r2">
+      <div class="fld"><label class="lbl">Data de Nascimento</label>
+        <input class="inp" id="inasc" type="date" value="${S.nasc}">
+        ${S.err.nasc?`<div class="err">${S.err.nasc}</div>`:''}
+      </div>
+      <div class="fld"><label class="lbl">Vendedor</label>
+        <input class="inp" id="ivend" placeholder="Nome do vendedor" value="${S.vend}">
+        ${S.err.vend?`<div class="err">${S.err.vend}</div>`:''}
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Produto(s) <span style="color:${S.prods.length?'#3b82f6':'#1e3860'}">${S.prods.length}/2 selecionados</span></div>
+    <div class="pgrid">${PRODS.map(p=>{
+      const sl=S.prods.includes(p),ds=!sl&&S.prods.length>=2;
+      return`<div class="pc${sl?' sl':''}${ds?' ds':''}" data-tp="${p}">
+        <div class="pck">${sl?'✓':''}</div>
+        <div class="pcn">${p}</div>
+      </div>`;
+    }).join('')}</div>
+    <div class="phint">${
+      S.prods.length===0?'Selecione 1 ou 2 produtos para simular':
+      S.prods.length===1?`<em>${S.prods[0]}</em> — pode adicionar mais 1`:
+      `<em>${S.prods[0]}</em> + <em>${S.prods[1]}</em>`
+    }</div>
+    ${S.err.prods?`<div class="err">${S.err.prods}</div>`:''}
+  </div>
+  <button class="btn" id="bnxt">Continuar para Simulação →</button>`;
+}
+
+function bind2(){
+  document.getElementById('iprazo').onchange=e=>{S.prazo=parseInt(e.target.value);render()};
+  document.getElementById('icar').onchange=e=>{S.car=parseInt(e.target.value);render()};
+  document.getElementById('ivmp').oninput=e=>{
+    S.vmp=parsePT(e.target.value);
+    document.querySelectorAll('.vmplbl').forEach(el=>el.textContent=`(${fBRL(S.vmp)}/pac)`);
+    S.prods.forEach((p,i)=>updProd(p,i));
+  };
+  S.prods.forEach((prod,i)=>{
+    const vc=document.getElementById('ivc'+i),en=document.getElementById('ien'+i);
+    if(vc)vc.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].vc=parsePT(e.target.value);updProd(prod,i)};
+    if(en)en.oninput=e=>{if(!S.sims[prod])S.sims[prod]={vc:0,en:0};S.sims[prod].en=parsePT(e.target.value);updProd(prod,i)};
+  });
+  document.getElementById('bbk').onclick=()=>{S.scr=1;render()};
+  document.getElementById('bsv').onclick=save;
+}
+
+function bind1(){
+  document.getElementById('icpf').oninput=e=>{S.cpf=mCPF(e.target.value);e.target.value=S.cpf};
+  document.getElementById('itel').oninput=e=>{S.tel=mTel(e.target.value);e.target.value=S.tel};
+  document.getElementById('icep').oninput=e=>{S.cep=mCEP(e.target.value);e.target.value=S.cep};
+  document.getElementById('inasc').onchange=e=>{S.nasc=e.target.value};
+  document.getElementById('ivend').oninput=e=>{S.vend=e.target.value};
+  document.getElementById('bnxt').onclick=()=>{if(val1()){S.scr=2;render();}else render()};
+  document.querySelectorAll('.pc[data-tp]').forEach(el=>el.onclick=()=>togP(el.dataset.tp));
+}
+
+function render(){
+  const app=document.getElementById('app');
+  const is1=S.scr===1;
+  app.innerHTML=`
+  <div class="hdr">
+    <div style="font-size:16px;font-weight:700;color:#60a5fa;letter-spacing:1px">Smart GR</div>
+    <div class="hdr-sub">Simulador de Financiamento</div>
+  </div>
+  <div class="stps">
+    <div class="stp${is1?' on':' ok'}">① Cadastro${!is1?' ✓':''}</div>
+    <div class="stp${!is1?' on':''}">② Simulação</div>
+  </div>
+  <div class="wrap">${is1?s1HTML():s2HTML()}</div>
+  ${S.saved?`<div class="toast">✓ ${S.prods.length} linha(s) salvas com sucesso!</div>`:''}`;
+  if(is1)bind1();else bind2();
+}
+render();
+</script>
+</body>
+</html>
